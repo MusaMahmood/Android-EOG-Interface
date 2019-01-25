@@ -182,7 +182,7 @@ constructor(directory: String, fileName: String, byteResolution: Int, increment:
                     writeCSVValue[dp][ch + 1] = floats[ch][dp].toString() + ""
             }
             if (this.includeClass) {
-                writeCSVValue[dp][columns - 1] = DeviceControlActivity.mSSVEPClass.toString() + ""
+                writeCSVValue[dp][columns - 1] = DeviceControlActivity.mTrainingClass.toString() + ""
             }
             csvWriter!!.writeNext(writeCSVValue[dp], false)
             this.mLinesWrittenTotal++
@@ -212,7 +212,7 @@ constructor(directory: String, fileName: String, byteResolution: Int, increment:
                     writeCSVValue[dp][ch + 1] = doubles[ch][dp].toString() + ""
             }
             if (this.includeClass) {
-                writeCSVValue[dp][columns - 1] = DeviceControlActivity.mSSVEPClass.toString() + ""
+                writeCSVValue[dp][columns - 1] = DeviceControlActivity.mTrainingClass.toString() + ""
             }
             csvWriter!!.writeNext(writeCSVValue[dp], false)
             this.mLinesWrittenTotal++

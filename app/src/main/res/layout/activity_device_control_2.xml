@@ -28,11 +28,11 @@
         ap:layout_constraintTop_toTopOf="parent" />
 
     <Switch
-        android:id="@+id/tensorflowClassificationSwitch"
+        android:id="@+id/trainingSwitch"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:checked="true"
-        android:text="TF"
+        android:text="Training Protocol"
         ap:layout_constraintStart_toEndOf="@+id/toggleButtonGraph"
         ap:layout_constraintTop_toTopOf="parent" />
 
@@ -43,7 +43,7 @@
         android:layout_marginTop="1dp"
         android:text="TextView"
         ap:layout_constraintStart_toEndOf="@+id/toggleButtonGraph"
-        ap:layout_constraintTop_toBottomOf="@+id/tensorflowClassificationSwitch" />
+        ap:layout_constraintTop_toBottomOf="@+id/trainingSwitch" />
 
     <TextView
         android:id="@+id/batteryText"
@@ -55,12 +55,24 @@
         ap:layout_constraintEnd_toEndOf="parent"
         ap:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:id="@+id/trainingText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="."
+        android:textAlignment="textEnd"
+        android:textSize="24sp"
+        ap:layout_constraintEnd_toEndOf="parent"
+        ap:layout_constraintTop_toBottomOf="@+id/batteryText" />
+
     <com.androidplot.xy.XYPlot
         android:id="@+id/ecgTimeDomainXYPlot"
         style="@style/APFullScreenGraph.Light.Minimalist"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
         ap:layout_constraintBottom_toTopOf="@+id/ecgTimeDomainXYPlot2"
+        ap:layout_constraintEnd_toEndOf="parent"
         ap:layout_constraintStart_toStartOf="parent"
         ap:layout_constraintTop_toBottomOf="@+id/button_export"
         ap:layout_constraintWidth_default="percent"
@@ -70,23 +82,15 @@
     <com.androidplot.xy.XYPlot
         android:id="@+id/ecgTimeDomainXYPlot2"
         style="@style/APFullScreenGraph.Light.Minimalist"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
         ap:layout_constraintBottom_toBottomOf="parent"
+        ap:layout_constraintEnd_toEndOf="parent"
         ap:layout_constraintStart_toStartOf="parent"
         ap:layout_constraintTop_toBottomOf="@+id/ecgTimeDomainXYPlot"
         ap:layout_constraintWidth_default="percent"
         ap:layout_constraintWidth_percent="0.6"
-        ap:renderMode="use_background_thread" />
-
-    <com.androidplot.xy.XYPlot
-        android:id="@+id/motionDataPlot"
-        style="@style/APFullScreenGraph.Light.Minimalist"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        ap:layout_constraintBottom_toBottomOf="parent"
-        ap:layout_constraintLeft_toRightOf="@id/ecgTimeDomainXYPlot"
-        ap:layout_constraintTop_toBottomOf="@+id/button_export"
         ap:renderMode="use_background_thread" />
 
 </android.support.constraint.ConstraintLayout>

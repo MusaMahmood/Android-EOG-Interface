@@ -14,6 +14,7 @@ import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -50,7 +51,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     private var mGraphAdapterMotionAZ: GraphAdapter? = null
     private var mTimeDomainPlotAdapterCh1: XYPlotAdapter? = null
     private var mTimeDomainPlotAdapterCh2: XYPlotAdapter? = null
-    private var mMotionDataPlotAdapter: XYPlotAdapter? = null
+//    private var mMotionDataPlotAdapter: XYPlotAdapter? = null
     //Device Information
     private var mBleInitializedBoolean = false
     private lateinit var mBluetoothGattArray: Array<BluetoothGatt?>
@@ -90,6 +91,10 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     private var mTensorflowOutputXDim = 1L
     private var mTensorflowOutputYDim = 1L
     private var mNumberOfClassifierCalls = 0
+    // Training Protocol:
+    private var mTrainingProtocol = true
+    //Play Sound:
+    private lateinit var mMediaBeep: MediaPlayer
 
 //    private var alertStatus = false
     private var popupWindow = PopupWindow()
@@ -137,16 +142,20 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             showPopupAlerts = b
         }
         mExportButton.setOnClickListener { exportData() }
-        enableTensorflowModel()
-        tensorflowClassificationSwitch.setOnCheckedChangeListener { _, b ->
-            if (b) {
-                //Enable Tensorflow Model
-                enableTensorflowModel()
-            } else {
-                mTFRunModel = false
-                mNumberOfClassifierCalls = 1
-                Toast.makeText(applicationContext, "Tensorflow Disabled", Toast.LENGTH_SHORT).show()
+        mMediaBeep = MediaPlayer.create(this, R.raw.beep_01a)
+        trainingSwitch.setOnCheckedChangeListener { _, b ->
+            mTrainingProtocol = b
+            if (!b) {
+                trainingText.text = "."
             }
+//            if (b) {
+//                //Enable Tensorflow Model
+//                enableTensorflowModel()
+//            } else {
+//                mTFRunModel = false
+//                mNumberOfClassifierCalls = 1
+//                Toast.makeText(applicationContext, "Tensorflow Disabled", Toast.LENGTH_SHORT).show()
+//            }
         }
         mOutputScoresNames = arrayOf(OUTPUT_DATA_FEED_KEY)
     }
@@ -346,12 +355,12 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     }
 
     private fun createNewFile() {
-        val directory = "/ECGData"
+        val directory = "/EOGData2ch"
         val fileNameTimeStamped = "ECGData_" + mTimeStamp + "_" + mSampleRate.toString() + "Hz"
         if (mPrimarySaveDataFile == null) {
             Log.e(TAG, "fileTimeStamp: $fileNameTimeStamped")
             mPrimarySaveDataFile = SaveDataFile(directory, fileNameTimeStamped,
-                    24, 1.toDouble() / mSampleRate, true, false)
+                    24, 1.toDouble() / mSampleRate, true, true)
         } else if (!mPrimarySaveDataFile!!.initialized) {
             Log.e(TAG, "New Filename: $fileNameTimeStamped")
             mPrimarySaveDataFile?.createNewFile(directory, fileNameTimeStamped)
@@ -396,11 +405,11 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         mTimeDomainPlotAdapterCh2 = XYPlotAdapter(findViewById(R.id.ecgTimeDomainXYPlot2), false, if (mSampleRate < 1000) 4 * mSampleRate else 2000)
         mTimeDomainPlotAdapterCh1?.xyPlot?.addSeries(mGraphAdapterCh1!!.series, mGraphAdapterCh1!!.lineAndPointFormatter)
         mTimeDomainPlotAdapterCh2?.xyPlot?.addSeries(mGraphAdapterCh2!!.series, mGraphAdapterCh2!!.lineAndPointFormatter)
-        mMotionDataPlotAdapter = XYPlotAdapter(findViewById(R.id.motionDataPlot), "Time (s)", "Acc (g)", 375.0)
-        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAX?.series, mGraphAdapterMotionAX?.lineAndPointFormatter)
-        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAY?.series, mGraphAdapterMotionAY?.lineAndPointFormatter)
-        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAZ?.series, mGraphAdapterMotionAZ?.lineAndPointFormatter)
-        val xyPlotList = listOf(mTimeDomainPlotAdapterCh1?.xyPlot, mTimeDomainPlotAdapterCh2?.xyPlot, mMotionDataPlotAdapter?.xyPlot)
+//        mMotionDataPlotAdapter = XYPlotAdapter(findViewById(R.id.motionDataPlot), "Time (s)", "Acc (g)", 375.0)
+//        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAX?.series, mGraphAdapterMotionAX?.lineAndPointFormatter)
+//        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAY?.series, mGraphAdapterMotionAY?.lineAndPointFormatter)
+//        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAZ?.series, mGraphAdapterMotionAZ?.lineAndPointFormatter)
+        val xyPlotList = listOf(mTimeDomainPlotAdapterCh1?.xyPlot, mTimeDomainPlotAdapterCh2?.xyPlot)
         mRedrawer = Redrawer(xyPlotList, 24f, false)
         mRedrawer!!.start()
         mGraphInitializedBoolean = true
@@ -652,9 +661,9 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             val dataMPU = characteristic.value
             getDataRateBytes2(dataMPU.size) //+=240
             mMPU!!.handleNewData(dataMPU)
-            if (mMPU!!.packetCounter == 10.toShort()) {
-                addToGraphBufferMPU(mMPU!!)
-            }
+//            if (mMPU!!.packetCounter == 10.toShort()) {
+//                addToGraphBufferMPU(mMPU!!)
+//            }
             mSaveFileMPU!!.exportDataWithTimestampMPU(mMPU!!.characteristicDataPacketBytes)
             if (mSaveFileMPU!!.mLinesWrittenCurrentFile > 1048576) {
                 mSaveFileMPU!!.terminateDataFileWriter()
@@ -700,6 +709,11 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
                         graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToDouble(dataChannel.dataBuffer!![3 * i],
                                 dataChannel.dataBuffer!![3 * i + 1], dataChannel.dataBuffer!![3 * i + 2]),
                                 dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 3 + i)
+                        if (mTrainingProtocol) {
+                            for (j in 0 until graphAdapter.sampleRate / 250) {
+                                updateTrainingRoutine(dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 3 + i + j)
+                            }
+                        }
                         i += graphAdapter.sampleRate / 250
                     }
                 } else if (mPrimarySaveDataFile!!.resolutionBits == 16) {
@@ -714,6 +728,83 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             }
         }
         dataChannel.resetBuffer()
+    }
+
+    private fun updateTrainingRoutine(dataPoints: Int) {
+        if (dataPoints % mSampleRate == 0 && mTrainingProtocol) {
+            val second = dataPoints / mSampleRate
+            val secondsBetweenAction = 2
+            Log.d(TAG, "mSDS:" + secondsBetweenAction.toString() + " second: " + second.toString())
+            if (second % secondsBetweenAction == 0) mMediaBeep.start()
+            when {
+                (second < secondsBetweenAction) -> {
+                    updateTrainingPromptColor(Color.GREEN)
+                    mTrainingClass = 0.0
+                    updateTrainingPrompt("Center")
+                }
+                (second == secondsBetweenAction) -> {
+                    mTrainingClass = 1.0
+                    updateTrainingPrompt("Blink")
+                }
+                (second == 2 * secondsBetweenAction) -> {
+                    mTrainingClass = 0.0
+                    updateTrainingPrompt("Center")
+                }
+                (second == 3 * secondsBetweenAction) -> {
+                    mTrainingClass = 2.0
+                    updateTrainingPrompt("Up")
+                }
+                (second == 4 * secondsBetweenAction) -> {
+                    mTrainingClass = 0.0
+                    updateTrainingPrompt("Center")
+                }
+                (second == 5 * secondsBetweenAction) -> {
+                    mTrainingClass = 3.0
+                    updateTrainingPrompt("Down")
+                }
+                (second == 6 * secondsBetweenAction) -> {
+                    mTrainingClass = 0.0
+                    updateTrainingPrompt("Center")
+                }
+                (second == 7 * secondsBetweenAction) -> {
+                    mTrainingClass = 4.0
+                    updateTrainingPrompt("Left")
+                }
+                (second == 8 * secondsBetweenAction) -> {
+                    mTrainingClass = 0.0
+                    updateTrainingPrompt("Center")
+                }
+                (second == 9 * secondsBetweenAction) -> {
+                    mTrainingClass = 5.0
+                    updateTrainingPrompt("Right")
+                }
+                (second == 10 * secondsBetweenAction) -> {
+                    mTrainingClass = 0.0
+                    updateTrainingPrompt("Center")
+                }
+                (second == 11 * secondsBetweenAction) -> {
+                    mTrainingClass = 0.0
+                    updateTrainingPrompt("Stop!")
+                    updateTrainingPromptColor(Color.RED)
+                    disconnectAllBLE()
+                    exportData()
+                }
+            }
+        }
+    }
+    private fun updateTrainingPrompt(prompt: String) {
+        runOnUiThread {
+            if (mTrainingProtocol) {
+                trainingText.text = prompt
+            }
+        }
+    }
+    private fun updateTrainingPromptColor(color: Int) {
+        runOnUiThread {
+            if (mTrainingProtocol) {
+                trainingText.setTextColor(color)
+            }
+        }
     }
 
     private fun addToGraphBufferMPU(dataChannel: DataChannel) {
@@ -925,7 +1016,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         private var mTimestampIdxMPU = 0
         //RSSI:
         const val RSSI_UPDATE_TIME_INTERVAL = 2000
-        var mSSVEPClass = 0.0
+        var mTrainingClass = 0.0
         //Save Data File
         private var mTensorflowOutputsSaveFile: SaveDataFile? = null
         private var mPrimarySaveDataFile: SaveDataFile? = null
