@@ -1,6 +1,5 @@
 package com.yeolabgt.mahmoodms.eog2chdemo
 
-import android.util.Log
 import com.androidplot.xy.LineAndPointFormatter
 import com.androidplot.xy.SimpleXYSeries
 
@@ -15,14 +14,14 @@ internal class GraphAdapter
     var series: SimpleXYSeries? = null
     var lineAndPointFormatter: LineAndPointFormatter = LineAndPointFormatter(lineAndPointFormatterColor, null, null, null)
     var sampleRate: Int = 0
-    var xAxisIncrement: Double = 0.toDouble()
+    private var xAxisIncrement: Double = 0.toDouble()
     var plotData: Boolean = false
 
     init {
         setPointWidth(5f) //Def value:
         this.series = SimpleXYSeries(XYSeriesTitle)
         if (useImplicitXVals) this.series!!.useImplicitXVals()
-        this.plotData = true  // Plot by default
+        this.plotData = false //Don't plot data until explicitly told to do so:
     }
 
     fun setPointWidth(width: Float) {
@@ -31,6 +30,14 @@ internal class GraphAdapter
 
     fun setSeriesHistoryDataPoints(seriesHistoryDataPoints: Int) {
         this.seriesHistoryDataPoints = seriesHistoryDataPoints
+    }
+
+    fun addDataPointsGeneric(xdata: DoubleArray, ydata: FloatArray, istart: Int, iend: Int) {
+        if (this.plotData) {
+            for (i in istart until iend) {
+                plot(xdata[i], ydata[i])
+            }
+        }
     }
 
     fun addDataPointTimeDomain(data: Double, index: Int) {
@@ -54,13 +61,13 @@ internal class GraphAdapter
     fun clearPlot() {
         if (this.series != null) {
             while (this.series!!.size() > 0) {
-                try {
-                    this.series!!.removeFirst()
-                } catch (e :NoSuchElementException) {
-                    Log.e(TAG, "No Such Element!!", e)
-                }
+                this.series!!.removeFirst()
             }
         }
+    }
+
+    private fun plot(x: Double, y: Float) {
+        series!!.addLast(x, y)
     }
 
     private fun plot(x: Double, y: Double) {
@@ -75,9 +82,5 @@ internal class GraphAdapter
             series!!.removeLast()
         }
         series!!.addLast(x, y)
-    }
-
-    companion object {
-        private val TAG = GraphAdapter::class.java.simpleName
     }
 }

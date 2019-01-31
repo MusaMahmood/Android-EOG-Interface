@@ -8,17 +8,24 @@ import com.google.common.primitives.Bytes
  */
 
 internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classification:
-                           var classificationBufferSize: Int) {
+                           classificationBufferSize: Int) {
     var characteristicDataPacketBytes: ByteArray? = null
     var packetCounter: Short = 0
     var totalDataPointsReceived: Int = 0
     var dataBuffer: ByteArray? = null
+    var classificationBufferSize: Int = 1000
+        set(value) {
+            this.classificationBuffer = DoubleArray(value)
+            this.classificationBufferFloats = FloatArray(value)
+            field = value
+        }
     var classificationBuffer: DoubleArray
-    private var classificationBufferFloats: FloatArray
+    var classificationBufferFloats: FloatArray
 
     init {
         this.packetCounter = 0
         this.totalDataPointsReceived = 0
+        this.classificationBufferSize = classificationBufferSize
         this.classificationBuffer = DoubleArray(classificationBufferSize)
         this.classificationBufferFloats = FloatArray(classificationBufferSize)
         Companion.MSBFirst = MSBFirst
@@ -30,21 +37,23 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
      *
      * @param newDataPacket new data packet received via BLE>
      */
-    fun handleNewData(newDataPacket: ByteArray) {
+    fun handleNewData(newDataPacket: ByteArray, mpuData: Boolean) {
         this.characteristicDataPacketBytes = newDataPacket
         if (this.dataBuffer != null) {
             this.dataBuffer = Bytes.concat(this.dataBuffer, newDataPacket)
         } else {
             this.dataBuffer = newDataPacket
         }
-        for (i in 0 until newDataPacket.size / 3) {
-            addToBuffer(bytesToDouble(newDataPacket[3 * i], newDataPacket[3 * i + 1], newDataPacket[3 * i + 2]))
+        if (!mpuData) {
+            for (i in 0 until newDataPacket.size / 3) {
+                addToBuffer(bytesToDouble(newDataPacket[3 * i], newDataPacket[3 * i + 1], newDataPacket[3 * i + 2]))
+            }
         }
         this.totalDataPointsReceived += newDataPacket.size / 3
         this.packetCounter++
     }
 
-    private fun addToBuffer(a: Double) {
+    fun addToBuffer(a: Double) {
         if (this.classificationBufferSize > 0) {
             System.arraycopy(this.classificationBuffer, 1, this.classificationBuffer, 0, this.classificationBufferSize - 1) //shift backwards
             System.arraycopy(this.classificationBufferFloats, 1, this.classificationBufferFloats, 0, this.classificationBufferSize - 1) //shift backwards
@@ -59,7 +68,34 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
     }
 
     companion object {
-        private var MSBFirst: Boolean = false
+        private val HEX_CHARS = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                                        'A', 'B', 'C', 'D', 'E', 'F')
+
+        fun byteArrayToHexString(byteArray: ByteArray) : String = byteArray.toHex()
+
+        private fun ByteArray.toHex() : String {
+            val result = StringBuffer()
+
+            forEach {
+                val octet = it.toInt()
+                val firstIndex = (octet and 0xF0).ushr(4)
+                val secondIndex = octet and 0x0F
+                result.append(HEX_CHARS[firstIndex])
+                result.append(HEX_CHARS[secondIndex])
+            }
+
+            return result.toString()
+        }
+
+        fun getIndexOfLargest(array: FloatArray?): Int {
+            if (array == null || array.isEmpty()) return -1 // null or empty
+
+            var largest = 0
+            for (i in 1 until array.size) {
+                if (array[i] > array[largest]) largest = i
+            }
+            return largest // position of the first largest found
+        }
 
         fun bytesToDoubleMPUAccel(a1: Byte, a2: Byte): Double {
             val unsigned: Int = unsignedBytesToInt(a1, a2, MSBFirst)
@@ -70,6 +106,8 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
             val unsigned: Int = unsignedBytesToInt(a1, a2, MSBFirst)
             return unsignedToSigned16bit(unsigned).toDouble() / 32767.0 * 4000.0
         }
+
+        private var MSBFirst: Boolean = false
 
         fun bytesToFloat32(a1: Byte, a2: Byte, a3: Byte): Float {
             val unsigned = unsignedBytesToInt(a1, a2, a3, MSBFirst)

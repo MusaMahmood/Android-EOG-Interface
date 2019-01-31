@@ -1,1 +1,1 @@
-# Android-SSVEP-Interface
+# Android-EMG-MultiDemo

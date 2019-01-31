@@ -20,17 +20,15 @@ add_library( # Sets the name of the library.
              src/main/cpp/native-lib.cpp )
 
 add_library( # Sets the name of the library.
-              ecg-lib
+              ssvep-lib
 
               # Sets the library as a shared library.
               SHARED
               # Provides a relative path to your source file(s).
 
                 # Main C++ Data Processing Files
-                src/main/cpp/downsample_250Hz.cpp
-                src/main/cpp/ecg_bandstop_250Hz.cpp
-                src/main/cpp/ecg_filt_rescale.cpp
-                src/main/cpp/resample_ecg.cpp
+                src/main/cpp/prep_eog.cpp
+                src/main/cpp/analyze_outputs_eog.cpp
 
                 # Executor
                 src/main/cpp/jniExecutor.cpp
@@ -61,7 +59,7 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
                        # ### NOTE YOU HAVE TO INDIVIDUALLY LINK EACH LIBRARY!
-                       ecg-lib
+                       ssvep-lib
 
                        # Links the target library to the log library
                        # included in the NDK.
@@ -73,3 +71,9 @@ target_link_libraries( # Specifies the target library.
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )
+
+target_compile_options(ssvep-lib PRIVATE
+    "$<$<CONFIG:RELEASE>:-O3>"
+    "$<$<CONFIG:DEBUG>:-O3>"
+)
+
